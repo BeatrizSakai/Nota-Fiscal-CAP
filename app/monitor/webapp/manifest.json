@@ -1,0 +1,176 @@
+{
+  "_version": "1.65.0",
+  "sap.app": {
+    "id": "monitoramento.monitor",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:lrop",
+      "version": "1.18.2",
+      "toolsId": "f1670874-21e7-4b11-9f04-6a1aadd46d5c"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/nota-fiscal/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.0"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.138.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "monitoramento.monitor.i18n.i18n"
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties"
+      }
+    },
+    "resources": {
+      "css": []
+    },
+    "routing": {
+      "config": {},
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "NotaFiscalServicoMonitorList",
+          "target": "NotaFiscalServicoMonitorList"
+        }
+      ],
+      "targets": {
+        "NotaFiscalServicoMonitorList": {
+          "type": "Component",
+          "id": "NotaFiscalServicoMonitorList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/NotaFiscalServicoMonitor",
+              "variantManagement": "Page",
+              "navigation": {},
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable",
+                    "enableExport": false,
+                    "selectAll": false,
+                    "selectionMode": "Multi",
+                    "widthIncludingColumnHeader": true,
+                    "personalization": {
+                      "column": false,
+                      "filter": true,
+                      "sort": true
+                    }
+                  },
+                  "columns": {
+                    "DataField::idAlocacaoSAP": {
+                      "width": "10em"
+                    },
+                    "DataField::logErroFlag": {
+                      "width": "4em"
+                    },
+                    "DataField::chaveDocumentoMae": {
+                      "width": "10em"
+                    },
+                    "DataField::chaveDocumentoFilho": {
+                      "width": "10em"
+                    },
+                    "DataField::orderIdPL": {
+                      "width": "10em"
+                    },
+                    "DataField::status": {
+                      "width": "4em"
+                    },
+                    "DataField::numeroNfseServico": {
+                      "width": "7em"
+                    },
+                    "DataField::dataEmissaoNfseServico": {
+                      "width": "9em"
+                    },
+                    "DataField::chaveAcessoNfseServico": {
+                      "width": "8em"
+                    },
+                    "DataField::codigoVerificacaoNfse": {
+                      "width": "8em"
+                    },
+                    "DataField::serieNfseServico": {
+                      "width": "4em"
+                    },
+                    "DataField::numeroDocumentoMIRO": {
+                      "width": "8em"
+                    },
+                    "DataField::valorBrutoNfse": {
+                      "width": "10em"
+                    },
+                    "DataField::valorLiquidoFreteNfse": {
+                      "width": "10em"
+                    },
+                    "DataField::valorEfetivoFrete": {
+                      "width": "10em"
+                    }
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  }
+}
