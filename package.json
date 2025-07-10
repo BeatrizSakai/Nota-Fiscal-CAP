@@ -6,10 +6,11 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@cap-js/hana": "^2",
     "@sap/cds": "^9",
-    "express": "^4",
     "@sap/xssec": "^4",
-    "@cap-js/hana": "^2"
+    "csv-parser": "^3.2.0",
+    "express": "^4"
   },
   "engines": {
     "node": ">=20"
