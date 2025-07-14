@@ -51,40 +51,71 @@ srv.before('CREATE', 'NotaFiscalServicoMonitor', async (req) => {
   });
   
   this.on('avancarStatusNFs', async req => {
-    // 1️⃣  Transação
-    const tx  = cds.transaction(req);
-    // 2️⃣  Descobre a chave selecionada (ID) a partir da URL bound
-    const key = req.params[0];               // ex: { ID: '1c0b…' }
-    // 3️⃣  Busca o registro para obter chaveDocumentoFilho + status
-    const nf = await tx.run(
-      SELECT.one.from(NotaFiscalServicoMonitor)
-        .columns('chaveDocumentoFilho', 'status')
-        .where(key)
-    );
-    if (!nf) req.error(404, 'NF não encontrada');
-    const { chaveDocumentoFilho, status: grpStatus } = nf;
-    // 4️⃣  Busca TODO o grupo (linhas que compartilham a chaveDocumentoFilho)
-    const rows = await tx.run(
+    const tx = cds.transaction(req);
+  
+    /* 1️⃣  Quais IDs foram enviados? (single-select ou multi-select) */
+    let idsSelecionados = [];
+    if (req.params?.length) {                           // múltiplas linhas
+      idsSelecionados = req.params.map(p => p.ID);      // [{ID:'…'}] → ['…']
+    } else if (req.data?.ID) {                          // bound em 1 linha
+      idsSelecionados = [req.data.ID];
+    } else {
+      return req.error(400, 'Nenhum ID recebido na requisição.');
+    }
+  
+    /* 2️⃣  Uma ÚNICA query traz tudo que precisamos p/ validar */
+    const rowsSelecionadas = await tx.run(
       SELECT.from(NotaFiscalServicoMonitor).columns(
-        'idAlocacaoSAP', 'status', 'issRetido', 'valorBrutoNfse',
-        'valorEfetivoFrete', 'valorLiquidoFreteNfse'
-      ).where({ chaveDocumentoFilho })
+        'ID',                   // chave primária
+        'idAlocacaoSAP',        // você ainda usa depois
+        'chaveDocumentoFilho',
+        'status',
+        'issRetido',
+        'valorBrutoNfse',
+        'valorEfetivoFrete',
+        'valorLiquidoFreteNfse'
+      ).where({ ID: { in: idsSelecionados } })
     );
-    if (!rows.length)
-    req.error(404, 'Nenhuma NF encontrada para esse grupo');
   
-    const ids = rows.map(r => r.idAlocacaoSAP);
+    if (!rowsSelecionadas.length) {
+      return req.error(404, 'Nenhuma NF encontrada para os IDs enviados.');
+    }
   
-    // 5️⃣  Roteia pelas etapas
+    /* 3️⃣  Validações em memória (0 chamadas extras) */
+    const grupos   = new Set(rowsSelecionadas.map(r => r.chaveDocumentoFilho));
+    const statuses = new Set(rowsSelecionadas.map(r => r.status));
+  
+    if (grupos.size   > 1)
+      return req.error(400, 'Seleção contém NFs de grupos (chaveDocumentoFilho) diferentes.');
+  
+    if (statuses.size > 1)
+      return req.error(400, 'Seleção contém NFs com status diferentes. Avanço bloqueado.');
+  
+    const [grupoFilho] = grupos;     // único valor que restou
+    const [grpStatus]  = statuses;
+  
+    /* 4️⃣  Se suas etapas atuam no GRUPO COMPLETO, carrega-o agora   */
+    const rowsGrupo = await tx.run(
+      SELECT.from(NotaFiscalServicoMonitor).columns(
+        'ID', 'idAlocacaoSAP', 'status',
+        'issRetido', 'valorBrutoNfse',
+        'valorEfetivoFrete', 'valorLiquidoFreteNfse'
+      ).where({ chaveDocumentoFilho: grupoFilho })
+    );
+    const idsGrupo = rowsGrupo.map(r => r.idAlocacaoSAP);
+  
+    /* 5️⃣  Roteia para a etapa correta */
     switch (grpStatus) {
-      case '01': return etapas.avancar.trans01para05(tx, rows, req);
-      case '05': return etapas.avancar.trans05para15(tx, ids, req);
-      case '15': return etapas.avancar.trans15para30(tx, rows, req);
-      case '30': return etapas.avancar.trans30para35(tx, rows, req);
-      case '35': return etapas.avancar.trans35para50(tx, ids, req);
-      default: req.error(400, `Status ${grpStatus} não suportado`);
+      case '01': return etapas.avancar.trans01para05(tx, rowsGrupo, req);
+      case '05': return etapas.avancar.trans05para15(tx, idsGrupo,  req);
+      case '15': return etapas.avancar.trans15para30(tx, rowsGrupo, req);
+      case '30': return etapas.avancar.trans30para35(tx, rowsGrupo, req);
+      case '35': return etapas.avancar.trans35para50(tx, idsGrupo,  req);
+      default :  return req.error(400, `Status ${grpStatus} não suportado para avanço.`);
     }
   });
+  
+  
 
   
     this.on('voltarStatusNFs', async req => {

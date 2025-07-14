@@ -159,6 +159,29 @@
                     "DataField::valorEfetivoFrete": {
                       "width": "10em"
                     }
+                  },
+                  "actions": {
+                    "DataFieldForAction::NotaFiscalService.rejeitarFrete": {
+                      "afterExecution": {
+                        "enableAutoScroll": true
+                      }
+                    },
+                    "DataFieldForAction::NotaFiscalService.avancarStatusNFs": {
+                      "afterExecution": {
+                        "enableAutoScroll": true
+                      }
+                    },
+                    "VerLogs": {
+                      "press": "monitoramento.monitor.ext.controller.VerLogs.onVerLogs",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "text": "Ver Logs",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "DataFieldForAction::NotaFiscalService.avancarStatusNFs"
+                      }
+                    }
                   }
                 }
               },

@@ -232,12 +232,12 @@ annotate service.NotaFiscalServicoMonitor with @(
         {
             $Type : 'UI.DataFieldForAction',
             Action : 'NotaFiscalService.rejeitarFrete',
-            Label : 'rejeitarFrete',
+            Label : 'Rejeitar Frete',
         },
         {
             $Type : 'UI.DataFieldForAction',
             Action : 'NotaFiscalService.avancarStatusNFs',
-            Label : 'avancarStatusNFs',
+            Label : 'Próxima Etapa',
         },
     ],
 );
