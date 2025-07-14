@@ -27,6 +27,7 @@ service NotaFiscalService {
 
     entity NotaFiscalServicoLog     as projection on db.NotaFiscalServicoLog;
 
+    @odata.draft.enabled
     entity ConfiguracoesISS as projection on db.ZTMM_ISS_CFG;
     @readonly
     entity Empresas as projection on db.Empresas;
@@ -40,4 +41,9 @@ service NotaFiscalService {
         novoStatus    : String;
     };
 
-    };
+}
+annotate NotaFiscalService.ConfiguracoesISS with {
+    @mandatory mandt;
+    @mandatory loc_neg;
+    @mandatory loc_fornec;
+};

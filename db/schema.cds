@@ -97,9 +97,10 @@ entity Empresas {
         nome : String(100);
 }
 entity ZTMM_ISS_CFG : cuid, managed {
-    mandt        : String(3);
-    empresa      : Association to Empresas; 
-    loc_neg      : String(4);
+    @title: 'Mandante'
+    @Core.Immutable mandt        : String(3) not null;
+    empresa      : Association to Empresas not null; 
+    loc_neg      : String(4) not null;
     loc_fornec   : String(15);
     prestac_serv : String(15);
     prestad_serv : String(10);
