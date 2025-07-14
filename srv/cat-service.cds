@@ -1,7 +1,27 @@
 using my.db as db from '../db/schema';
 
 service NotaFiscalService {
-    entity NotaFiscalServicoMonitor as projection on db.NotaFiscalServicoMonitor;
+    entity NotaFiscalServicoMonitor as projection on db.NotaFiscalServicoMonitor{
+        *,
+    }actions{
+    @cds.odata.bindingparameter.name : '_it'
+    action avancarStatusNFs()            // ← sem parâmetro! (ver caminho C se quiser)
+    returns array of {
+      idAlocacaoSAP     : String;
+      success           : Boolean;
+      message           : String;
+      novoStatus        : String;
+      numeroNfseServico : String;
+    };
+    @cds.odata.bindingparameter.name : '_it'
+    action rejeitarFrete() 
+    returns array of {
+        idAlocacaoSAP : String;
+        success       : Boolean;
+        message       : String;
+        novoStatus    : String;
+    };
+    }
 
     entity NotaFiscalServicoLog     as projection on db.NotaFiscalServicoLog;
 
@@ -17,22 +37,5 @@ service NotaFiscalService {
         message       : String;
         novoStatus    : String;
     };
-    action avancarStatusNFs(
-        grpFilho      : String     
-    ) returns array of {
-        idAlocacaoSAP     : String;
-        success           : Boolean;
-        message           : String;
-        novoStatus        : String;
-        numeroNfseServico : String;
-    };
-    action rejeitarFrete(
-        grpFilho      : String
-    ) returns array of {
-        idAlocacaoSAP : String;
-        success       : Boolean;
-        message       : String;
-        novoStatus    : String;
-    };
 
-}
+    };
