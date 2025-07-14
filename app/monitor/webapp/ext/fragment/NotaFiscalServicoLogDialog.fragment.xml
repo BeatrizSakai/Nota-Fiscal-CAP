@@ -1,0 +1,67 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+
+
+    <Dialog
+        id="logDialog"
+        title="Logs de Processamento"
+        class="sapUiContentPadding"
+        resizable="true"
+        draggable="true"
+        contentWidth="80%">
+
+        <Table
+            id="logTable"
+            growing="true"
+            growingScrollToLoad="true"
+            items="{
+            path: '/NotaFiscalServicoLog',
+            filters: [
+                { path: 'tipoMensagemErro', operator: 'EQ', value1: 'E' },
+                { path: 'tipoMensagemErro', operator: 'EQ', value1: 'R' }
+            ],
+            parameters: {
+                $orderby: 'createdAt desc'
+            }
+            }">
+
+            <columns>
+                <Column id="colCreatedAt">
+                    <Text id="txtHeaderData" text="Data"/>
+                </Column>
+
+                <Column id="colNF">
+                    <Text id="txtHeaderNF" text="NF"/>
+                </Column>
+
+                <Column id="colMensagem">
+                    <Text id="txtHeaderMsg" text="Mensagem"/>
+                </Column>
+            </columns>
+
+     
+            <items>
+                <ColumnListItem id="logRow">
+                    <cells>
+                        <!-- sap ja deixa o horario certo slk -->
+                        <Text
+                            id="txtCreatedAt"
+                            text="{createdAt}"/>
+
+                    
+                        <Text id="txtNF" text="{idAlocacaoSAP}"/>
+
+                    
+                        <Text id="txtMsg" text="{mensagemErro}"/>
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+
+        
+        <endButton>
+        <Button id="btnCloseLog" text="Fechar"/>
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>
