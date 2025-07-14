@@ -229,6 +229,22 @@ annotate service.NotaFiscalServicoMonitor with @(
             Value : valorEfetivoFrete,
             @UI.Importance : #High,
         },
+        {
+            $Type : 'UI.DataFieldForAction',
+            Action : 'NotaFiscalService.rejeitarFrete',
+            Label : 'rejeitarFrete',
+        },
+        {
+            $Type : 'UI.DataFieldForAction',
+            Action : 'NotaFiscalService.avancarStatusNFs',
+            Label : 'avancarStatusNFs',
+        },
     ],
 );
 
+ annotate service.NotaFiscalServicoMonitor.avancarStatusNFs
+  with @Common.SideEffects #RefreshGroup : {
+    // grupo = todas as NFs que compartilham a chaveDocumentoFilho
+    SourceProperties : ['chaveDocumentoFilho'],   // a propriedade que mudou
+    TargetEntities   : ['srv.NotaFiscalServicoMonitor']  // refresh da coleção
+};

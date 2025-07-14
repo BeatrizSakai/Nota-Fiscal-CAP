@@ -50,31 +50,42 @@ srv.before('CREATE', 'NotaFiscalServicoMonitor', async (req) => {
     console.log("✅ [BACKEND] Todas as validações passaram. Prosseguindo com a criação.");
   });
   
-    this.on('avancarStatusNFs', async req => {
-      const { grpFilho } = req.data || {};
-      if (!grpFilho) return req.error(400, 'grpFilho é obrigatório');
+  this.on('avancarStatusNFs', async req => {
+    // 1️⃣  Transação
+    const tx  = cds.transaction(req);
+    // 2️⃣  Descobre a chave selecionada (ID) a partir da URL bound
+    const key = req.params[0];               // ex: { ID: '1c0b…' }
+    // 3️⃣  Busca o registro para obter chaveDocumentoFilho + status
+    const nf = await tx.run(
+      SELECT.one.from(NotaFiscalServicoMonitor)
+        .columns('chaveDocumentoFilho', 'status')
+        .where(key)
+    );
+    if (!nf) req.error(404, 'NF não encontrada');
+    const { chaveDocumentoFilho, status: grpStatus } = nf;
+    // 4️⃣  Busca TODO o grupo (linhas que compartilham a chaveDocumentoFilho)
+    const rows = await tx.run(
+      SELECT.from(NotaFiscalServicoMonitor).columns(
+        'idAlocacaoSAP', 'status', 'issRetido', 'valorBrutoNfse',
+        'valorEfetivoFrete', 'valorLiquidoFreteNfse'
+      ).where({ chaveDocumentoFilho })
+    );
+    if (!rows.length)
+    req.error(404, 'Nenhuma NF encontrada para esse grupo');
   
-      const tx = cds.transaction(req);
-      const rows = await tx.run(
-        SELECT.from(NotaFiscalServicoMonitor).columns(
-          'idAlocacaoSAP', 'status', 'issRetido', 'valorBrutoNfse',
-          'valorEfetivoFrete', 'valorLiquidoFreteNfse'
-        ).where({ chaveDocumentoFilho: grpFilho })
-      );
-      if (!rows.length) return req.error(404, 'Nenhuma NF encontrada');
+    const ids = rows.map(r => r.idAlocacaoSAP);
   
-      const grpStatus = rows[0].status;
-      const ids = rows.map(r => r.idAlocacaoSAP);
-  
-      switch (grpStatus) {
-        case '01': return etapas.avancar.trans01para05(tx, rows);
-        case '05': return etapas.avancar.trans05para15(tx, ids);
-        case '15': return etapas.avancar.trans15para30(tx, rows);
-        case '30': return etapas.avancar.trans30para35(tx, rows);
-        case '35': return etapas.avancar.trans35para50(tx, ids);
-        default: return req.error(400, `Status ${grpStatus} não suportado`);
-      }
-    });
+    // 5️⃣  Roteia pelas etapas
+    switch (grpStatus) {
+      case '01': return etapas.avancar.trans01para05(tx, rows, req);
+      case '05': return etapas.avancar.trans05para15(tx, ids, req);
+      case '15': return etapas.avancar.trans15para30(tx, rows, req);
+      case '30': return etapas.avancar.trans30para35(tx, rows, req);
+      case '35': return etapas.avancar.trans35para50(tx, ids, req);
+      default: req.error(400, `Status ${grpStatus} não suportado`);
+    }
+  });
+
   
     this.on('voltarStatusNFs', async req => {
       const { grpFilho, grpStatus } = req.data;
@@ -99,60 +110,62 @@ srv.before('CREATE', 'NotaFiscalServicoMonitor', async (req) => {
     });
   
   
-    this.on('rejeitarFrete', async req => {
-      const { grpFilho } = req.data || {};
-      if (!grpFilho) return req.error(400, 'grpFilho é obrigatório');
-  
+    this.on('rejeitarFrete', NotaFiscalServicoMonitor, async req => {
       const tx = cds.transaction(req);
+      const { NotaFiscalServicoMonitor } = this.entities;
   
-      /* 1️⃣  Pega todos os IDs do grupo ------------------------- */
-      const linhas = await tx.run(
-        SELECT.from(NotaFiscalServicoMonitor)
-          .columns('idAlocacaoSAP')
-          .where({ chaveDocumentoFilho: grpFilho })
-      );
-      if (!linhas.length) return req.error(404, 'Nenhuma NF no grupo');
+      // 2️ Descobre a chave da NF selecionada
+      if (!req.params || req.params.length === 0) {
+          return req.error(400, 'Nenhuma nota fiscal foi selecionada para a rejeição.');
+      }
+      const key = req.params[0]; // Pega a primeira (e única) nota selecionada
+      console.log(`[HANDLER] - Ação "rejeitarFrete" chamada para a NF com chave:`, key);
   
+      //  Busca a chave do grupo a partir da NF selecionada
+      const nf = await tx.run(SELECT.one.from(NotaFiscalServicoMonitor).columns('chaveDocumentoFilho').where(key));
+      if (!nf || !nf.chaveDocumentoFilho) {
+          return req.error(404, 'Não foi possível encontrar o grupo de frete para a nota selecionada.');
+      }
+      const { chaveDocumentoFilho } = nf;
+      console.log(`[HANDLER] - Grupo de frete a ser rejeitado: ${chaveDocumentoFilho}`);
+  
+      //  Busca todos os IDs do grupo para a operação em lote
+      const linhas = await tx.run(SELECT.from(NotaFiscalServicoMonitor).columns('idAlocacaoSAP').where({ chaveDocumentoFilho }));
+      if (!linhas.length) {
+          return req.error(404, `Nenhuma NF encontrada para o grupo "${chaveDocumentoFilho}".`);
+      }
       const ids = linhas.map(l => l.idAlocacaoSAP);
   
-      /* 2️⃣  Atualiza status para 55 + grava LOG "R" ------------ */
+      /* 5️⃣ Atualiza status para 55 e grava o log */
       try {
-        await tx.update(NotaFiscalServicoMonitor)
-          .set({ status: '55' })
-          .where({ chaveDocumentoFilho: grpFilho });
+          await tx.update(NotaFiscalServicoMonitor).set({ status: '55' }).where({ chaveDocumentoFilho });
+          
+          await Promise.all(
+              ids.map(id =>
+                  gravarLog(tx, id, 'Frete rejeitado – status movido para 55.', 'R', 'REJ_FRETE', '055', 'rejeitarFrete')
+              )
+          );
   
-        // um log "R" para cada NF  ➜ gravarLog já propaga campos na tabela
-        await Promise.all(
-          ids.map(id =>
-            gravarLog(
-              tx,
-              id,
-              'Frete rejeitado – status 55',
-              'R',                       // tipoMensagemErro = Rejeitado
-              'REJ_FRETE',               // classe
-              '055',                     // número
-              'rejeitarFrete'            // origem
-            )
-          )
-        );
+          //  RESUMO DE SUCESSO PARA A UI 
+          req.info({
+              code: 'REJ_FRETE_OK',
+              message: `${ids.length} NF(s) do grupo foram rejeitadas com sucesso (status 55).`,
+              numericSeverity: 2
+          });
   
-        return sucesso(ids, '55');       // helper padrão
+          return sucesso(ids, '55', {}, 'Frete rejeitado com sucesso.');
   
       } catch (e) {
-        // Se algo falhar, gera um log de erro por NF
-        await Promise.all(
-          ids.map(id =>
-            gravarLog(
-              tx,
-              id,
-              e.message,
-              'E', 'REJ_FRETE', '055', 'rejeitarFrete'
-            )
-          )
-        );
-        return falha(ids, '55', 'Falha ao rejeitar: ' + e.message);
+          console.error(`[HANDLER] - Erro ao rejeitar o grupo ${chaveDocumentoFilho}:`, e);
+          await Promise.all(
+              ids.map(id =>
+                  gravarLog(tx, id, e.message, 'E', 'REJ_FRETE_FAIL', '997', 'rejeitarFrete')
+              )
+          );
+          req.error(500, `Ocorreu um erro técnico ao tentar rejeitar as notas: ${e.message}`);
+          return falha(ids, 'ERRO', 'Falha ao rejeitar: ' + e.message);
       }
-    });
+  });
   
   
     // =======================================================
