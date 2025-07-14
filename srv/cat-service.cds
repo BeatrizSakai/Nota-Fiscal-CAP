@@ -3,6 +3,8 @@ using my.db as db from '../db/schema';
 service NotaFiscalService {
     entity NotaFiscalServicoMonitor as projection on db.NotaFiscalServicoMonitor{
         *,
+        @Core.Computed
+        virtual criticality: Integer
     }actions{
     @cds.odata.bindingparameter.name : '_it'
     action avancarStatusNFs()            // ← sem parâmetro! (ver caminho C se quiser)

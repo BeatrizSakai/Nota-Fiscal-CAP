@@ -114,6 +114,9 @@
                     }
                   },
                   "columns": {
+                    "DataField::tipoMensagemErro": {
+                      "width": "4em"
+                    },
                     "DataField::idAlocacaoSAP": {
                       "width": "10em"
                     },

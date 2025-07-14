@@ -238,6 +238,17 @@ srv.before('CREATE', 'NotaFiscalServicoMonitor', async (req) => {
         return req.error(400, error.message);
       }
     });
+
+    this.after('READ', NotaFiscalServicoMonitor, (each) => {
+      // A lógica de negócio para definir a cor
+      if (each.status === '50') {
+          each.criticality = 3; // 3 = Success (Verde)
+      } else if (each.status === '55') {
+          each.criticality = 1; // 1 = Error (Vermelho)
+      } else {
+          each.criticality = 0; // 0 ou 5 = Neutral (Sem cor)
+      }
+  });
   
   });
   
