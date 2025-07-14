@@ -39,9 +39,23 @@ modules:
       - monitoramentomonitor.zip
       name: monitoramentomonitor
       target-path: resources/
+    - artifacts:
+      - configuracaoissui.zip
+      name: configuracaoissui
+      target-path: resources/
 - name: monitoramentomonitor
   type: html5
   path: app/monitor
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+- name: configuracaoissui
+  type: html5
+  path: app/configuracaoiss_ui
   build-parameters:
     build-result: dist
     builder: custom

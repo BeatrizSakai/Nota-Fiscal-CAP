@@ -231,4 +231,3 @@ annotate service.NotaFiscalServicoMonitor with @(
         },
     ],
 );
-
