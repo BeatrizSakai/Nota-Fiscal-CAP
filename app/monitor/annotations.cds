@@ -83,6 +83,7 @@ annotate service.NotaFiscalServicoMonitor with @(
                 $Type : 'UI.DataField',
                 Value : serieNotaFiscalSAP,
             },
+           
             {
                 $Type : 'UI.DataField',
                 Value : numeroControleDocumentoSAP,
@@ -91,10 +92,12 @@ annotate service.NotaFiscalServicoMonitor with @(
                 $Type : 'UI.DataField',
                 Value : documentoVendasMae,
             },
+            
             {
                 $Type : 'UI.DataField',
                 Value : documentoFaturamentoMae,
             },
+            
             {
                 $Type : 'UI.DataField',
                 Value : localPrestacaoServico,
@@ -143,6 +146,7 @@ annotate service.NotaFiscalServicoMonitor with @(
                 $Type : 'UI.DataField',
                 Value : numeroMensagemErro,
             },
+            
         ],
     },
     UI.Facets : [
@@ -154,14 +158,6 @@ annotate service.NotaFiscalServicoMonitor with @(
         },
     ],
     UI.LineItem : [
-        {
-            $Type : 'UI.DataField',
-            Value : tipoMensagemErro,
-            Criticality : criticality,
-            CriticalityRepresentation : #WithoutIcon,
-           @UI.Importance : #High,
-            Label : 'Log',
-        },
         {
             $Type : 'UI.DataField',
             Value : idAlocacaoSAP,
@@ -274,12 +270,10 @@ annotate service.NotaFiscalServicoMonitor with @(
             CriticalityRepresentation : #WithoutIcon,
             Label : 'Próxima Etapa',
         },
+        {
+            $Type : 'UI.DataField',
+            Value : tipoMensagemErro,
+        },
     ],
 );
 
- annotate service.NotaFiscalServicoMonitor.avancarStatusNFs
-  with @Common.SideEffects #RefreshGroup : {
-    // grupo = todas as NFs que compartilham a chaveDocumentoFilho
-    SourceProperties : ['chaveDocumentoFilho'],   // a propriedade que mudou
-    TargetEntities   : ['srv.NotaFiscalServicoMonitor']  // refresh da coleção
-};
