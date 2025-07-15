@@ -159,6 +159,15 @@
                     "DataField::valorEfetivoFrete": {
                       "width": "10em"
                     }
+                  },
+                  "actions": {
+                    "printbtn": {
+                      "press": "monitoramento.monitor.ext.controller.Print.onPressPrint",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "text": "Imprimir"
+                    }
                   }
                 }
               },
