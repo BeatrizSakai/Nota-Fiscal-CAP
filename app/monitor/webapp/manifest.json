@@ -116,6 +116,7 @@
                   "columns": {
                     "LogIconColumn": {
                       "header": "Log",
+                      "width": "3.75rem",
                       "horizontalAlign": "Center",
                       "position": {
                         "anchor": "DataField::idAlocacaoSAP",
