@@ -83,6 +83,7 @@ annotate service.NotaFiscalServicoMonitor with @(
                 $Type : 'UI.DataField',
                 Value : serieNotaFiscalSAP,
             },
+           
             {
                 $Type : 'UI.DataField',
                 Value : numeroControleDocumentoSAP,
@@ -91,10 +92,12 @@ annotate service.NotaFiscalServicoMonitor with @(
                 $Type : 'UI.DataField',
                 Value : documentoVendasMae,
             },
+            
             {
                 $Type : 'UI.DataField',
                 Value : documentoFaturamentoMae,
             },
+            
             {
                 $Type : 'UI.DataField',
                 Value : localPrestacaoServico,
@@ -143,6 +146,7 @@ annotate service.NotaFiscalServicoMonitor with @(
                 $Type : 'UI.DataField',
                 Value : numeroMensagemErro,
             },
+            
         ],
     },
     UI.Facets : [
@@ -156,95 +160,120 @@ annotate service.NotaFiscalServicoMonitor with @(
     UI.LineItem : [
         {
             $Type : 'UI.DataField',
-            Value : logErroFlag,
-            @UI.Importance : #High,
-        },
-        {
-            $Type : 'UI.DataField',
             Value : idAlocacaoSAP,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : orderIdPL,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : chaveDocumentoMae,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : chaveDocumentoFilho,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : status,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : numeroNfseServico,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : serieNfseServico,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : dataEmissaoNfseServico,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : chaveAcessoNfseServico,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : codigoVerificacaoNfse,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : numeroDocumentoMIRO,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : valorBrutoNfse,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : valorLiquidoFreteNfse,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataField',
             Value : valorEfetivoFrete,
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             @UI.Importance : #High,
         },
         {
             $Type : 'UI.DataFieldForAction',
             Action : 'NotaFiscalService.rejeitarFrete',
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             Label : 'Rejeitar Frete',
         },
         {
             $Type : 'UI.DataFieldForAction',
             Action : 'NotaFiscalService.avancarStatusNFs',
+            Criticality : criticality,
+            CriticalityRepresentation : #WithoutIcon,
             Label : 'Próxima Etapa',
+        },
+        {
+            $Type : 'UI.DataField',
+            Value : tipoMensagemErro,
         },
     ],
 );
 
- annotate service.NotaFiscalServicoMonitor.avancarStatusNFs
-  with @Common.SideEffects #RefreshGroup : {
-    // grupo = todas as NFs que compartilham a chaveDocumentoFilho
-    SourceProperties : ['chaveDocumentoFilho'],   // a propriedade que mudou
-    TargetEntities   : ['srv.NotaFiscalServicoMonitor']  // refresh da coleção
-};

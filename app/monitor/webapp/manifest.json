@@ -114,6 +114,15 @@
                     }
                   },
                   "columns": {
+                    "LogIconColumn": {
+                      "header": "Log",
+                      "horizontalAlign": "Center",
+                      "position": {
+                        "anchor": "DataField::idAlocacaoSAP",
+                        "placement": "Before"
+                      },
+                      "template": "monitoramento.monitor.ext.fragment.LogIconColumn"
+                    },
                     "DataField::idAlocacaoSAP": {
                       "width": "10em"
                     },
@@ -158,6 +167,9 @@
                     },
                     "DataField::valorEfetivoFrete": {
                       "width": "10em"
+                    },
+                    "DataField::tipoMensagemErro": {
+                      "width": "0em"
                     }
                   },
                   "actions": {
