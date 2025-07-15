@@ -194,9 +194,7 @@
                         "placement": "After",
                         "anchor": "DataFieldForAction::NotaFiscalService.avancarStatusNFs"
                       }
-                    }
-                  },
-                  "actions": {
+                    },
                     "printbtn": {
                       "press": "monitoramento.monitor.ext.controller.Print.onPressPrint",
                       "visible": true,
