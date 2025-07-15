@@ -262,7 +262,6 @@ module.exports = cds.service.impl(function (srv) {
                 row.logIcon = basePath + 'default.png'; // Mesmo o default pode ser visível
                 break;
         }
-         console.log(`Para tipo ${row.tipoMensagemErro}, Ícone: ${row.logIcon}`);
     }
 });
 
