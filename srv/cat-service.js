@@ -251,19 +251,15 @@ module.exports = cds.service.impl(function (srv) {
         switch (row.tipoMensagemErro) {
             case 'S':
                 row.logIcon = basePath + 'log-square-green.png';
-                row.logIconVisibility = 7; // 7 = Visível
                 break;
             case 'E':
                 row.logIcon = basePath + 'log-triangle-yellow.png';
-                row.logIconVisibility = 7; // 7 = Visível
                 break;
             case 'R':
                 row.logIcon = basePath + 'log-circle-red.png';
-                row.logIconVisibility = 7; // 7 = Visível
                 break;
             default:
                 row.logIcon = basePath + 'default.png'; // Mesmo o default pode ser visível
-                row.logIconVisibility = 7; // Ou 0 se não quiser mostrar nada
                 break;
         }
          console.log(`Para tipo ${row.tipoMensagemErro}, Ícone: ${row.logIcon}`);
