@@ -17,6 +17,10 @@ service NotaFiscalService {
 
             @cds.odata.bindingparameter.name: '_it'
             action rejeitarFrete() returns array of NotaFiscalServicoMonitor;
+
+            @cds.odata.bindingparameter.name: '_it'
+            action voltarStatusNFs() returns array of NotaFiscalServicoMonitor;
+
         }
 
 
@@ -29,13 +33,6 @@ service NotaFiscalService {
     entity Empresas                 as projection on db.Empresas;
 
     action uploadArquivoFrete(data : LargeBinary)                  returns Boolean;
-
-    action voltarStatusNFs(grpFilho : String, grpStatus : Integer) returns array of {
-        idAlocacaoSAP : String;
-        success       : Boolean;
-        message       : String;
-        novoStatus    : String;
-    };
 
 }
 

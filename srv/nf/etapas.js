@@ -276,44 +276,67 @@ module.exports = function buildEtapas(srv) {
    *            Funções de REVERTER (50->35->30…)              *
    * --------------------------------------------------------- */
   /** Reverte 50 → 35 */
-  async function trans50para35_reverso(tx, notas) {
+  async function trans50para35_reverso(tx, notas, req) { // <-- Aceita o req
     const ids = notas.map(n => n.idAlocacaoSAP);
     const criterio = { chaveDocumentoFilho: notas[0].chaveDocumentoFilho, status: notas[0].status };
     await tx.update(NotaFiscalServicoMonitor).set({ status: '35' }).where(criterio);
+    await Promise.all(ids.map(id => gravarLog(tx, id, "Status revertido para 'Fatura Criada' (35).", 'S', 'REV_50_35', '000')));
+
+    // Notificação para a UI, igual à função de avançar
+    req.info({ code: 'REV_50_35_OK', message: `${ids.length} NF(s) revertida(s) para o status 35.`, numericSeverity: 2 });
+
     return sucesso(ids, '35', {}, "Status revertido para 'Fatura Criada'.");
   }
 
   /** Reverte 35 → 30 */
-  async function trans35para30_reverso(tx, notas) {
+  async function trans35para30_reverso(tx, notas, req) { // <-- Aceita o req
     const ids = notas.map(n => n.idAlocacaoSAP);
     const criterio = { chaveDocumentoFilho: notas[0].chaveDocumentoFilho, status: notas[0].status };
     await tx.update(NotaFiscalServicoMonitor).set({ status: '30', numeroDocumentoMIRO: null }).where(criterio);
+    await Promise.all(ids.map(id => gravarLog(tx, id, "Status revertido para 'Pedido Criado' (30). Dados da MIRO removidos.", 'S', 'REV_35_30', '000')));
+
+    req.info({ code: 'REV_35_30_OK', message: `${ids.length} NF(s) revertida(s) para o status 30.`, numericSeverity: 2 });
+
     return sucesso(ids, '30', {}, "Status revertido. Dados da Fatura/MIRO removidos.");
   }
+
   /** Reverte 30 → 15 */
-  async function trans30para15_reverso(tx, notas) {
+  async function trans30para15_reverso(tx, notas, req) { // <-- Aceita o req
     const ids = notas.map(n => n.idAlocacaoSAP);
     const criterio = { chaveDocumentoFilho: notas[0].chaveDocumentoFilho, status: notas[0].status };
     await tx.update(NotaFiscalServicoMonitor)
       .set({ status: '15', valorBrutoNfse: 0.00, valorEfetivoFrete: 0.00, valorLiquidoFreteNfse: 0.00 })
       .where(criterio);
+    await Promise.all(ids.map(id => gravarLog(tx, id, "Status revertido para 'NF Confirmada' (15). Valores zerados.", 'S', 'REV_30_15', '000')));
+
+    req.info({ code: 'REV_30_15_OK', message: `${ids.length} NF(s) revertida(s) para o status 15 e valores zerados.`, numericSeverity: 2 });
+
     return sucesso(ids, '15', {}, "Status revertido. Dados do Pedido de Compra removidos.");
   }
+
   /** Reverte 15 → 05 */
-  async function trans15para05_reverso(tx, notas) {
+  async function trans15para05_reverso(tx, notas, req) { // <-- Aceita o req
     const ids = notas.map(n => n.idAlocacaoSAP);
     const criterio = { chaveDocumentoFilho: notas[0].chaveDocumentoFilho, status: notas[0].status };
     await tx.update(NotaFiscalServicoMonitor).set({ status: '05' }).where(criterio);
+    await Promise.all(ids.map(id => gravarLog(tx, id, "Status revertido para 'NF Atribuída' (05).", 'S', 'REV_15_05', '000')));
+
+    req.info({ code: 'REV_15_05_OK', message: `${ids.length} NF(s) revertida(s) para o status 05.`, numericSeverity: 2 });
+
     return sucesso(ids, '05', {}, "Status revertido para 'NF Atribuída'.");
   }
+
   /** Reverte 05 → 01 */
-  async function trans05para01_reverso(tx, notas) {
+  async function trans05para01_reverso(tx, notas, req) { // <-- Aceita o req
     const ids = notas.map(n => n.idAlocacaoSAP);
     const criterio = { chaveDocumentoFilho: notas[0].chaveDocumentoFilho, status: notas[0].status };
     await tx.update(NotaFiscalServicoMonitor).set({ status: '01', numeroNfseServico: null }).where(criterio);
+    await Promise.all(ids.map(id => gravarLog(tx, id, "Status revertido para 'Não Atribuída' (01). Número da NF removido.", 'S', 'REV_05_01', '000')));
+
+    req.info({ code: 'REV_05_01_OK', message: `${ids.length} NF(s) revertida(s) para o status 01.`, numericSeverity: 2 });
+
     return sucesso(ids, '01', {}, "Status revertido para 'Não Atribuída'.");
   }
-
   async function BAPI_PO_CREATE1(nota) {
     const { valorBrutoNfse, valorEfetivoFrete, valorLiquidoFreteNfse } = nota;
     const temValor = (valorBrutoNfse && valorBrutoNfse > 0) ||

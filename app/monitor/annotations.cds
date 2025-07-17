@@ -271,6 +271,11 @@ annotate service.NotaFiscalServicoMonitor with @(
             Label : 'Próxima Etapa',
         },
         {
+            $Type  : 'UI.DataFieldForAction',
+            Action : 'NotaFiscalService.voltarStatusNFs',
+            Label  : 'Voltar Etapa'
+        },
+        {
             $Type : 'UI.DataField',
             Value : tipoMensagemErro,
         },
