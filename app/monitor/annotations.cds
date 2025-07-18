@@ -271,8 +271,35 @@ annotate service.NotaFiscalServicoMonitor with @(
             Label : 'Próxima Etapa',
         },
         {
+            $Type  : 'UI.DataFieldForAction',
+            Action : 'NotaFiscalService.voltarStatusNFs',
+            Label  : 'Voltar Etapa'
+        },
+        {
             $Type : 'UI.DataField',
             Value : tipoMensagemErro,
+        },
+        {
+            $Type : 'UI.DataFieldForActionGroup',
+            Actions : [
+                {
+                    $Type : 'UI.DataFieldForAction',
+                    Action : 'NotaFiscalService.EntityContainer/calcularTotalBruto',
+                    Label : 'calcularTotalBruto',
+                },
+                {
+                    $Type : 'UI.DataFieldForAction',
+                    Action : 'NotaFiscalService.EntityContainer/calcularTotalLiquido',
+                    Label : 'calcularTotalLiquido',
+                },
+                {
+                    $Type : 'UI.DataFieldForAction',
+                    Action : 'NotaFiscalService.EntityContainer/calcularTotalFrete',
+                    Label : 'calcularTotalFrete',
+                },
+            ],
+            ID : 'CalcularTotal',
+            Label : 'Calcular Total',
         },
     ],
 );
