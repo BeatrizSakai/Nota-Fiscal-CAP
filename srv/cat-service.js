@@ -2,10 +2,8 @@ const cds = require('@sap/cds');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
 const validation = require('./lib/validation');
-const processor = require('./lib/uploadProcessor');
 
 require('dotenv').config();
-
 
 module.exports = cds.service.impl(function (srv) {
   const etapas = require('./nf/etapas')(srv);
@@ -196,62 +194,21 @@ module.exports = cds.service.impl(function (srv) {
     }
   });
 
-
-  // =======================================================
-  // ==                  FUNÇÕES HELPER                   ==
-  // =======================================================
-
-  this.on('uploadArquivoFrete', async (req) => {
-    console.log('\n[Upload de Arquivo] 🚀 Início do processamento.');
-    const { data } = req.data;
-    if (!data) return req.error(400, 'Nenhum arquivo recebido.');
-
-    const buffer = Buffer.from(data.split(';base64,')[1], 'base64');
-    const stream = Readable.from(buffer).pipe(csv({ mapHeaders: ({ header }) => header.trim() }));
-
-    try {
-      await cds.tx(async (tx) => {
-        tx.req = req;
-        console.log("  [Orquestrador] Transação iniciada. Delegando para o processador...");
-
-        // 1. Processa o stream e valida linhas individuais
-        const batch = await processor.processarStream(stream);
-
-        // 2. Executa validações no lote completo (consistência, duplicados)
-        await processor.validarLoteCompleto(batch, tx, NotaFiscalServicoMonitor);
-
-        // 3. Insere os registros no banco
-        await processor.inserirRegistros(batch, tx, NotaFiscalServicoMonitor);
-
-        console.log("  [Orquestrador] ✨ Processo concluído. Notificando o usuário.");
-        req.notify(`Arquivo processado e ${batch.length} registros importados com sucesso!`);
-      });
-
-      console.log('[Upload de Arquivo] ✅ Processo finalizado com sucesso.');
-      return true;
-
-    } catch (error) {
-      // O erro pode vir de qualquer uma das etapas do processador
-      console.error(`\n[Upload de Arquivo] ❌ FALHA! Rollback executado. Motivo: ${error.message}\n`);
-      return req.error(400, error.message);
-    }
-  });
-
   this.after('READ', 'NotaFiscalServicoMonitor', (rows) => {
     rows = Array.isArray(rows) ? rows : [rows];
     const basePath = '/monitor/webapp/images/';
 
     for (const row of rows) {
       // criticality 
-      row.criticality = row.status === '50' ? 3  
-                      : row.status === '55' ? 1
-                      : 0;
+      row.criticality = row.status === '50' ? 3
+        : row.status === '55' ? 1
+          : 0;
 
       // icone
-      if      (row.tipoMensagemErro === 'S') row.logIcon = basePath + 'log-square-green.png';
+      if (row.tipoMensagemErro === 'S') row.logIcon = basePath + 'log-square-green.png';
       else if (row.tipoMensagemErro === 'E') row.logIcon = basePath + 'log-triangle-yellow.png';
       else if (row.tipoMensagemErro === 'R') row.logIcon = basePath + 'log-circle-red.png';
-      else                                   row.logIcon = basePath + 'default.png';
+      else row.logIcon = basePath + 'default.png';
 
       /* visibilidade: mostra sempre (inclusive quando tipoMensagemErro = '') */
       row.logIconVisible = true;          // <-- é aqui que você troca!
@@ -259,48 +216,96 @@ module.exports = cds.service.impl(function (srv) {
     }
   });
 
-  srv.on('importarCSV', async req => {
+  srv.on('importarCSV', async (req) => {
+    console.log('\n[Upload Fiori Elements] 🚀 Início do processamento.');
     const { fileContent } = req.data || {};
 
-    if (!fileContent)
-      return req.error(400, 'fileContent vazio – envie o CSV em base64 ou texto.');
-
-    /* 1. Converte: se veio em base64 → Buffer; se veio texto → usa direto */
-    const csvString =
-      /^[A-Za-z0-9+/]+=*$/.test(fileContent.trim())
-        ? Buffer.from(fileContent, 'base64').toString('utf8')
-        : fileContent;
-
-    /* 2. Faz parsing linha a linha */
-    const linhas = [];
-    await new Promise((resolve, reject) => {
-      Readable.from(csvString)
-        .pipe(csv({ separator: ';', mapHeaders: ({ header }) => header.trim() }))
-        .on('data', data => linhas.push(data))
-        .on('end', resolve)
-        .on('error', reject);
-    });
-
-    /* 3. Valida e grava */
-    const tx        = cds.transaction(req);
-    const resultados = [];
-
-    for (const linha of linhas) {
-      try {
-        // // …exemplo de validação mínima:
-        // if (!linha.idAlocacaoSAP) throw new Error('idAlocacaoSAP obrigatório');
-
-        // Insert ou UPSERT (conforme sua regra)
-        await tx.run(INSERT.into(NotaFiscalServicoMonitor).entries(linha));
-
-        resultados.push({ idAlocacaoSAP: linha.idAlocacaoSAP, sucesso: true, mensagem: 'Importado' });
-      } catch (e) {
-        resultados.push({ idAlocacaoSAP: linha.idAlocacaoSAP || '', sucesso: false, mensagem: e.message });
-      }
+    if (!fileContent) {
+      return req.error(400, 'fileContent vazio – envie o conteúdo do CSV.');
     }
 
-    return resultados;                // vira a resposta da action
+    const csvString = /^[A-Za-z0-9+/]+=*$/.test(fileContent.trim())
+      ? Buffer.from(fileContent, 'base64').toString('utf8')
+      : fileContent;
+
+    // --- ETAPA 1: PARSING DO CSV PARA UM LOTE (BATCH) EM MEMÓRIA ---
+    const batch = [];
+    try {
+      await new Promise((resolve, reject) => {
+        Readable.from(csvString)
+          .pipe(csv({ separator: ',', mapHeaders: ({ header }) => header.trim() }))
+          .on('data', data => batch.push(data))
+          .on('end', resolve)
+          .on('error', (err) => reject(new Error(`Erro ao ler o arquivo CSV: ${err.message}`)));
+      });
+      if (batch.length === 0) throw new Error("O arquivo está vazio ou em um formato inválido.");
+      console.log(`[Processador] Arquivo lido com sucesso. ${batch.length} registros encontrados.`);
+    } catch (error) {
+      console.error(`[Processador] ❌ FALHA no parsing. Motivo: ${error.message}`);
+      return req.error(400, error.message);
+    }
+
+    // --- ETAPA 2: VALIDAÇÃO E INSERÇÃO DENTRO DE UMA TRANSAÇÃO ---
+    const resultados = [];
+    try {
+      await cds.tx(async (tx) => {
+        console.log("  [Orquestrador] Transação iniciada. Iniciando validações...");
+
+        // 2.1 Validação de campos em cada linha (lógica do processarStream)
+        console.log("  [Validação] Validando campos de cada registro...");
+        for (const [index, registro] of batch.entries()) {
+          const validacao = validation.validarCampos(registro, index + 1);
+          if (!validacao.isValid) {
+            const erroMsg = `O arquivo foi rejeitado, erros encontrados no item ${index + 2}:\n- ${validacao.errors.join('\n- ')}`;
+            throw new Error(erroMsg);
+          }
+        }
+        console.log("    ✅ Validação de campos individuais concluída.");
+
+        // 2.2 Validações no lote completo (lógica do validarLoteCompleto)
+        console.log("  [Validação] Validando consistência do lote completo...");
+
+        // 2.2.1 - Consistência Mãe-Filho no lote
+        validation.validarConsistenciaMaeFilhoNoLote(batch);
+
+        // 2.2.2 - Duplicados no banco
+        const todosOsIdsDoArquivo = batch.map(r => r.idAlocacaoSAP).filter(Boolean);
+        const idsExistentes = await tx.run(
+          SELECT.from(NotaFiscalServicoMonitor, ['idAlocacaoSAP']).where({ idAlocacaoSAP: { in: todosOsIdsDoArquivo } })
+        );
+        if (idsExistentes.length > 0) {
+          const listaIds = idsExistentes.map(nf => nf.idAlocacaoSAP).join(', ');
+          throw new Error(`O arquivo foi rejeitado. As seguintes alocações SAP já existem no sistema: ${listaIds}`);
+        }
+        console.log("    ✅ Validação de lote concluída. Nenhum duplicado encontrado.");
+
+        // 2.3 Insere os registros no banco (lógica do inserirRegistros)
+        console.log(`  [Banco de Dados] Inserindo ${batch.length} novos registros...`);
+        await tx.run(INSERT.into(NotaFiscalServicoMonitor).entries(batch));
+        console.log("    ✅ Registros inseridos com sucesso.");
+
+        // Prepara a resposta de sucesso para o frontend
+        batch.forEach(linha => {
+          resultados.push({
+            idAlocacaoSAP: linha.idAlocacaoSAP,
+            sucesso: true,
+            mensagem: 'Importado'
+          });
+        });
+
+      }); // Fim do cds.tx
+
+      console.log('[Upload Fiori Elements] ✅ Processo finalizado com sucesso.');
+      return resultados; // Retorna o array de sucesso
+
+    } catch (error) {
+      // O erro pode vir de qualquer uma das validações ou da inserção
+      console.error(`\n[Upload Fiori Elements] ❌ FALHA! Rollback automático. Motivo: ${error.message}\n`);
+
+      // Retorna o erro de forma amigável para o MessageToast no Fiori Elements
+      return req.error(400, error.message);
+    }
   });
 
-  
+
 });
