@@ -221,7 +221,73 @@ module.exports = cds.service.impl(function (srv) {
       return falha(ids, 'ERRO', 'Falha ao rejeitar: ' + e.message);
     }
   });
+  // Pega a referência para a sua entidade do serviço.
 
+    // --- FUNÇÃO AUXILIAR PARA O CÁLCULO ---
+    // Uma função para não repetir código. Ela busca os dados, soma e formata.
+ 
+
+// Importe a entidade no escopo do serviço
+
+
+    /**
+     * Calcula a soma de uma coluna e formata como moeda brasileira.
+     * @param {object} req - O objeto da requisição CAP.
+     * @param {string} column - O nome da coluna a ser somada.
+     * @returns {string} - O valor total formatado como "R$ 0,00".
+     */
+    async function calculateAndFormat(req, column, label) {
+      // SELECT busca todos os registros da tabela para o cálculo.
+      const allItems = await SELECT.from(NotaFiscalServicoMonitor);
+
+      // Se a tabela estiver vazia, não há o que calcular.
+      if (allItems.length === 0) {
+          const formattedZero = (0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          // Informa o usuário no frontend que não há dados.
+          req.info(`Nenhum item encontrado para calcular o ${label}.`);
+          return formattedZero;
+      }
+
+      // 'reduce' é ótimo para somar os valores da coluna.
+      const total = allItems.reduce((sum, item) => {
+          // parseFloat garante que estamos somando números, com '|| 0' para segurança.
+          const value = parseFloat(item[column]) || 0;
+          return sum + value;
+      }, 0);
+      
+      // Um bom e velho console.log para ajudar a gente no backend! 😉
+      console.log(`LOG DO BACKEND: ${label} calculado para a coluna '${column}': ${total}`);
+
+      const formattedTotal = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      // AQUI ESTÁ A MÁGICA! ✨
+      // Enviando uma mensagem específica para o frontend.
+      req.info(`${label}: ${formattedTotal}`);
+
+      // O 'return' devolve o dado para o frontend.
+      return formattedTotal;
+  }
+
+  // --- IMPLEMENTAÇÃO DE CADA AÇÃO ---
+
+  // Cada handler de ação é 'async (req)' para receber o objeto da requisição.
+  // E cada um chama nossa função genérica com os parâmetros corretos.
+
+  srv.on('calcularTotalBruto', async (req) => {
+      console.log("LOG DO BACKEND: Ação 'calcularTotalBruto' foi chamada.");
+      return calculateAndFormat(req, 'valorBrutoNfse', 'Total Bruto');
+  });
+  
+  srv.on('calcularTotalLiquido', async (req) => {
+      console.log("LOG DO BACKEND: Ação 'calcularTotalLiquido' foi chamada.");
+      return calculateAndFormat(req, 'valorLiquidoFreteNfse', 'Total Líquido');
+  }); 
+
+  srv.on('calcularTotalFrete', async (req) => {
+      console.log("LOG DO BACKEND: Ação 'calcularTotalFrete' foi chamada.");
+      return calculateAndFormat(req, 'valorEfetivoFrete', 'Total Frete');
+  });
+    
   // =======================================================
   // ==                  FUNÇÕES HELPER                   ==
   // =======================================================

@@ -33,7 +33,11 @@ service NotaFiscalService {
     entity Empresas                 as projection on db.Empresas;
 
     action uploadArquivoFrete(data : LargeBinary)                  returns Boolean;
-
+    action calcularTotal() returns String;
+    action calcularTotalBruto() returns String;
+    action calcularTotalLiquido() returns String;
+    action calcularTotalFrete() returns String;
+    action limparTotais() returns Boolean;
 }
 
 annotate NotaFiscalService.ConfiguracoesISS with {
