@@ -274,6 +274,11 @@ annotate service.NotaFiscalServicoMonitor with @(
             $Type : 'UI.DataField',
             Value : tipoMensagemErro,
         },
+        {
+            $Type : 'UI.DataFieldForAction',
+            Action : 'NotaFiscalService.EntityContainer/importarCSV',
+            Label : 'importarCSV',
+        },
     ],
 );
 

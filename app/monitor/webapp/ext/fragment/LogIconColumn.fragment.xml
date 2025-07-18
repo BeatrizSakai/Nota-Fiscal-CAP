@@ -3,11 +3,11 @@
     xmlns:m="sap.m">
 
     <m:Image
-        id = "imagemlog"
-        src="{logIcon}"
-        width="40px"
-        densityAware="false"
-        visible="{= ${logIcon} !== '' }"
+    id="imagemlog"
+    src="{logIcon}"
+    width="40px"
+    densityAware="false"
+    visible="{logIconVisible}"
     />
 
 </core:FragmentDefinition>

@@ -1,49 +1,70 @@
-sap.ui.define(["sap/ui/core/Fragment"], function (Fragment) {
-    "use strict";
-  
-    const FRAG_ID  = "LogDlg";      // id prefixado do fragment
-    const TABLE_ID = "logTable";    // id da <Table> no XML
-  
-    return {
-  
-      /* Botão “Ver Logs” ‒ abre o diálogo e força refresh ---------------- */
-      onVerLogs: async function () {
-  
-        if (!this.oLogDialog) {
-          /* 1️  Carrega o fragmento só na 1ª vez */
-          this.oLogDialog = await this.loadFragment({
-            id   : FRAG_ID,
-            name : "monitoramento.monitor.ext.fragment.NotaFiscalServicoLogDialog"
+sap.ui.define([
+  "sap/ui/core/Fragment",
+  "sap/m/MessageToast"
+], function (Fragment, MessageToast) {
+  "use strict";
+
+  const FRAG_ID  = "UploadCsvDlg";   // prefixo do fragmento
+  const FILE_ID  = "fileUploader";   // id do FileUploader
+
+  return {
+
+    /* Botão da barra de ações (“Importar CSV”) --------------------------- */
+    onUploadCSV: async function () {
+
+      /* 1️⃣  Carrega o fragmento apenas na primeira vez */
+      if (!this.oUploadDialog) {
+        this.oUploadDialog = await this.loadFragment({
+          id   : FRAG_ID,
+          name : "monitoramento.monitor.ext.fragment.UploadCSVDialog"
+        });
+
+        /* 2️⃣  Botão Cancelar */
+        Fragment.byId(FRAG_ID, "btnCancelUpload")
+                .attachPress(() => this.oUploadDialog.close());
+
+        /* 3️⃣  Botão Enviar */
+        Fragment.byId(FRAG_ID, "btnSendUpload")
+                .attachPress(async () => {
+
+          /* ---- leitura do arquivo -------------------------------------- */
+          const oUploader = Fragment.byId(FRAG_ID, FILE_ID);
+          const file      = oUploader.getFocusDomRef()?.files[0];
+
+          if (!file) {
+            MessageToast.show("Escolha um arquivo CSV primeiro.");
+            return;
+          }
+          const csvText = await file.text();
+
+          /* ---- chamada da action CAP ----------------------------------- */
+          const oModel = this.getView().getModel();          // OData V4
+          const oCtx   = oModel.bindContext("/importarCSV(...)", null, {
+            $$groupId : "csvImport"
           });
-  
-          /* 2️  Botão “Fechar” */
-          Fragment.byId(FRAG_ID, "btnCloseLog")
-                  .attachPress(() => this.oLogDialog.close());
-  
-          /* 3️  Função inline para refresh sempre que abrir */
-          const refreshLogs = () => {
-            const oTable   = Fragment.byId(FRAG_ID, TABLE_ID);
-            if (!oTable)   { console.log("[LOG] tabela não encontrada"); return; }
-  
-            const oBinding = oTable.getBinding("items");
-            if (!oBinding) { console.log("[LOG] binding inexistente");  return; }
-  
-            oTable.setBusy(true);
-            Promise.resolve(oBinding.refresh())        // OData V4 → força leitura
-              .then(() =>
-                console.log(`[LOG] refresh OK – linhas: ${oBinding.getLength()}`))
-              .catch(err =>
-                console.error("[LOG] erro durante refresh:", err))
-              .finally(() => oTable.setBusy(false));
-          };
-  
-          /* 4️  Liga o refresh ao evento AfterOpen */
-          this.oLogDialog.attachAfterOpen(refreshLogs);
-        }
-  
-        /* 5️  Abre (o AfterOpen já executa refreshLogs) */
-        this.oLogDialog.open();
+          oCtx.setParameter("fileContent", csvText);
+
+          try {
+            await oCtx.execute();                // POST na action
+            const aRes = oCtx.getObject();       // array de resultados
+
+            MessageToast.show(
+              `Importação concluída: ${aRes.length} linhas.`);
+
+            await oModel.refresh();              // recarrega a tabela
+
+          } catch (e) {
+            MessageToast.show("Erro: " + e.message);
+            console.error(e);
+          } finally {
+            oUploader.clear();
+            this.oUploadDialog.close();
+          }
+        });
       }
-    };
-  });
-  
+
+      /* 4️⃣  Abre o diálogo (os handlers já estão ligados) */
+      this.oUploadDialog.open();
+    }
+  };
+});

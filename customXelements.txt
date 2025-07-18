@@ -1,0 +1,44 @@
+Elements;
+-Visual com Imagens Pesa o Navegador:
+Para manter a similaridade com o legado usando imagens em colunas (ex: log), o FE pode sofrer em performance.
+Se usar ícones SAP nativos, o visual é mais leve, mas perde-se cores customizadas,
+pois só é possível aplicar Criticality em uma única coluna.utilização de icones do sap (porem sem cores pois só pode usar 1 critacility em uma coluna)
+
+-Mais SELECTs no Back-end:
+Para executar transições de etapa, o FE envia apenas os IDs selecionados. Isso obriga o back a fazer duas consultas (uma para os IDs e outra para o grupo completo). 
+No freestyle, já mandamos diretamente o chaveDocumentoFilho, o que economiza uma chamada.
+
+- Menos flexibilidade de logica:
+No FE, a lógica de seleção e ações é mais engessada, baseada nos eventos padrões da SAP. Não dá pra montar uma lógica de seleção em cascata com total liberdade.
+
+-Multiselect Limitado e Propenso a Confusão:
+Por padrão, o FE não permite controlar visualmente quais linhas se relacionam em grupo.
+Ex: se o usuário marcar duas NFs de grupos diferentes e disparar ações em sequência, o FE manda requisições separadas,
+o que pode gerar um fluxo meio confuso (ex: 05 → 15 → 30 em sequência rápida). Funciona, mas o controle visual é fraco.
+
+-Layout Menos Personalizável:
+Filtros e botões (como o “Iniciar”) vêm prontos no FE, mas não podem ser posicionados livremente. Isso pode gerar uma UI um pouco diferente da original ou da desejada.
+
+-Criticality com Limitação Visual:
+É possível aplicar @UI.Criticality, mas somente no conteúdo da célula. Não dá para pintar o fundo da linha inteira(Até da porem não é o jeito recomendado pela SAP)
+
+Custom;
+-Perfeito lindo 
+
+-Total Liberdade de UI e Lógica:
+Nós definimos como cada interação acontece. Pode selecionar visualmente todo o grupo, aplicar regras visuais customizadas, e montar a UI igualzinha ao sistema legado.
+
+-Performance Otimizada:
+Como envia diretamente o chaveDocumentoFilho, 1 SELECT só resolve tudo. Menos chamadas, menos complexidade.
+
+-Controle Visual Total:
+Dá pra destacar grupos com cores, ícones, tooltips, esconder checkboxes, colocar botões em qualquer lugar, etc.
+
+-UX Muito Mais Clara para o Usuário:
+O usuário vê claramente o que está selecionado, por que está, e o que vai acontecer com o grupo inteiro.
+
+-Mais Código, Mais Liberdade:
+Demanda mais trabalho, mas permite criar um fluxo mais intuitivo e robusto para operações em lote, status, logs, etc.
+
+Custom = 240hrs (mais conhecimento da aplicação e do que pode ser feito ou não)
+FE = 120hrs~240hrs

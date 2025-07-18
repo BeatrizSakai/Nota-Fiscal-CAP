@@ -9,7 +9,10 @@ service NotaFiscalService {
                 virtual criticality : Integer,
                 @Core.Computed
                 @UI.IsImageURL
-                virtual logIcon     : String
+                virtual logIcon     : String,
+
+                @Core.Computed           
+                virtual logIconVisible   : Boolean,
         }
         actions {
             @cds.odata.bindingparameter.name: '_it'
@@ -37,7 +40,15 @@ service NotaFiscalService {
         novoStatus    : String;
     };
 
-}
+    type CSVImportResult {
+    idAlocacaoSAP : String;
+    sucesso       : Boolean;
+    mensagem      : String;
+    }
+
+     action importarCSV ( fileContent : LargeString ) returns array of CSVImportResult;
+
+    }
 
 annotate NotaFiscalService.ConfiguracoesISS with {
     @mandatory mandt;
