@@ -238,33 +238,69 @@ module.exports = cds.service.impl(function (srv) {
   });
 
   this.after('READ', 'NotaFiscalServicoMonitor', (rows) => {
-    // Garante que é sempre um array
     rows = Array.isArray(rows) ? rows : [rows];
-    console.log('HANDLER AFTER READ DEFINITIVO: Calculando todos os campos virtuais.');
-
     const basePath = '/monitor/webapp/images/';
 
     for (const row of rows) {
-        row.criticality = (row.status === '50') ? 3 : (row.status === '55') ? 1 : 0;
+      // criticality 
+      row.criticality = row.status === '50' ? 3  
+                      : row.status === '55' ? 1
+                      : 0;
 
-        // 2. Lógica do Ícone e sua Visibilidade
-        switch (row.tipoMensagemErro) {
-            case 'S':
-                row.logIcon = basePath + 'log-square-green.png';
-                break;
-            case 'E':
-                row.logIcon = basePath + 'log-triangle-yellow.png';
-                break;
-            case 'R':
-                row.logIcon = basePath + 'log-circle-red.png';
-                break;
-            default:
-                row.logIcon = basePath + 'default.png'; // Mesmo o default pode ser visível
-                break;
-        }
+      // icone
+      if      (row.tipoMensagemErro === 'S') row.logIcon = basePath + 'log-square-green.png';
+      else if (row.tipoMensagemErro === 'E') row.logIcon = basePath + 'log-triangle-yellow.png';
+      else if (row.tipoMensagemErro === 'R') row.logIcon = basePath + 'log-circle-red.png';
+      else                                   row.logIcon = basePath + 'default.png';
+
+      /* visibilidade: mostra sempre (inclusive quando tipoMensagemErro = '') */
+      row.logIconVisible = true;          // <-- é aqui que você troca!
+      // se quisesse esconder só quando for null/undefined:
     }
-});
+  });
 
+  srv.on('importarCSV', async req => {
+    const { fileContent } = req.data || {};
 
+    if (!fileContent)
+      return req.error(400, 'fileContent vazio – envie o CSV em base64 ou texto.');
 
+    /* 1. Converte: se veio em base64 → Buffer; se veio texto → usa direto */
+    const csvString =
+      /^[A-Za-z0-9+/]+=*$/.test(fileContent.trim())
+        ? Buffer.from(fileContent, 'base64').toString('utf8')
+        : fileContent;
+
+    /* 2. Faz parsing linha a linha */
+    const linhas = [];
+    await new Promise((resolve, reject) => {
+      Readable.from(csvString)
+        .pipe(csv({ separator: ';', mapHeaders: ({ header }) => header.trim() }))
+        .on('data', data => linhas.push(data))
+        .on('end', resolve)
+        .on('error', reject);
+    });
+
+    /* 3. Valida e grava */
+    const tx        = cds.transaction(req);
+    const resultados = [];
+
+    for (const linha of linhas) {
+      try {
+        // // …exemplo de validação mínima:
+        // if (!linha.idAlocacaoSAP) throw new Error('idAlocacaoSAP obrigatório');
+
+        // Insert ou UPSERT (conforme sua regra)
+        await tx.run(INSERT.into(NotaFiscalServicoMonitor).entries(linha));
+
+        resultados.push({ idAlocacaoSAP: linha.idAlocacaoSAP, sucesso: true, mensagem: 'Importado' });
+      } catch (e) {
+        resultados.push({ idAlocacaoSAP: linha.idAlocacaoSAP || '', sucesso: false, mensagem: e.message });
+      }
+    }
+
+    return resultados;                // vira a resposta da action
+  });
+
+  
 });
