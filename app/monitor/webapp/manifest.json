@@ -103,7 +103,7 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "GridTable",
-                    "enableExport": false,
+                    "enableExport": true,
                     "selectAll": false,
                     "selectionMode": "Multi",
                     "widthIncludingColumnHeader": true,
@@ -111,7 +111,8 @@
                       "column": false,
                       "filter": true,
                       "sort": true
-                    }
+                    },
+                    "selectionLimit": 1
                   },
                   "columns": {
                     "LogIconColumn": {
@@ -210,7 +211,19 @@
                   }
                 }
               },
-              "initialLoad": "Enabled"
+              "initialLoad": "Enabled",
+              "content": {
+                "header": {
+                  "actions": {
+                    "UploadCSV": {
+                      "press": "monitoramento.monitor.ext.controller.UploadCSV.onUploadCSV",
+                      "visible": true,
+                      "enabled": true,
+                      "text": "Importar CSV"
+                    }
+                  }
+                }
+              }
             }
           }
         }
