@@ -82,6 +82,6 @@ sap.ui.define([
 
       /* 4️⃣  Abre o diálogo (os handlers já estão ligados) */
       this.oUploadDialog.open();
-    }
+    },
   };
 });

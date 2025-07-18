@@ -1,6 +1,7 @@
 using my.db as db from '../db/schema';
 
 service NotaFiscalService {
+    @odata.draft.enabled
     entity NotaFiscalServicoMonitor as
         projection on db.NotaFiscalServicoMonitor {
             *,
