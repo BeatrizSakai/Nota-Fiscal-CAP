@@ -1,10 +1,7 @@
 using NotaFiscalService as service from '../../srv/cat-service';
 
 annotate service.NotaFiscalServicoMonitor with @(
-    Capabilities.DeleteRestrictions: {
-        $Type    : 'Capabilities.DeleteRestrictionsType',
-        Deletable: false
-    },
+    
     UI.FieldGroup #GeneratedGroup  : {
         $Type: 'UI.FieldGroupType',
         Data : [
@@ -131,33 +128,13 @@ annotate service.NotaFiscalServicoMonitor with @(
                 $Type: 'UI.DataField',
                 Value: enviadoParaPL,
             },
-            {
-                $Type: 'UI.DataField',
-                Value: logErroFlag,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: mensagemErro,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: tipoMensagemErro,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: classeMensagemErro,
-            },
-            {
-                $Type: 'UI.DataField',
-                Value: numeroMensagemErro,
-            },
 
         ],
     },
     UI.Facets                      : [{
         $Type : 'UI.ReferenceFacet',
         ID    : 'GeneratedFacet1',
-        Label : 'General Information',
+        Label : 'Informações Gerais',
         Target: '@UI.FieldGroup#GeneratedGroup',
     }, ],
     UI.LineItem                    : [
@@ -278,4 +255,16 @@ annotate service.NotaFiscalServicoMonitor with @(
             Value: tipoMensagemErro,
         },
     ],
+    UI.HeaderInfo : {
+        TypeName : '',
+        TypeNamePlural : '',
+        Title : {
+            $Type : 'UI.DataField',
+            Value : idAlocacaoSAP,
+        },
+        Description : {
+            $Type : 'UI.DataField',
+            Value : 'Nota Fiscal',
+        },
+    },
 );

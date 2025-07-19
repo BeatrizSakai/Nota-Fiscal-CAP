@@ -244,7 +244,15 @@
           "options": {
             "settings": {
               "navigation": {},
-              "contextPath": "/NotaFiscalServicoMonitor"
+              "contextPath": "/NotaFiscalServicoMonitor",
+              "variantManagement": "None",
+              "content": {
+                "header": {
+                  "anchorBarVisible": false,
+                  "visible": true
+                }
+              },
+              "editableHeaderContent": false
             }
           },
           "controlAggregation": "midColumnPages",
