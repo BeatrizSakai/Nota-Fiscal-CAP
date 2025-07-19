@@ -1,8 +1,8 @@
 using NotaFiscalService as service from '../../srv/cat-service';
 
 annotate service.NotaFiscalServicoMonitor with @(
-    
-    UI.FieldGroup #GeneratedGroup  : {
+
+    UI.FieldGroup #GeneratedGroup: {
         $Type: 'UI.FieldGroupType',
         Data : [
             {
@@ -131,13 +131,13 @@ annotate service.NotaFiscalServicoMonitor with @(
 
         ],
     },
-    UI.Facets                      : [{
+    UI.Facets                    : [{
         $Type : 'UI.ReferenceFacet',
         ID    : 'GeneratedFacet1',
         Label : 'Informações Gerais',
         Target: '@UI.FieldGroup#GeneratedGroup',
     }, ],
-    UI.LineItem                    : [
+    UI.LineItem                  : [
         {
             $Type                    : 'UI.DataField',
             Value                    : idAlocacaoSAP,
@@ -254,17 +254,39 @@ annotate service.NotaFiscalServicoMonitor with @(
             $Type: 'UI.DataField',
             Value: tipoMensagemErro,
         },
-    ],
-    UI.HeaderInfo : {
-        TypeName : '',
-        TypeNamePlural : '',
-        Title : {
-            $Type : 'UI.DataField',
-            Value : idAlocacaoSAP,
+        {
+            $Type  : 'UI.DataFieldForActionGroup',
+            Actions: [
+                {
+                    $Type : 'UI.DataFieldForAction',
+                    Action: 'NotaFiscalService.EntityContainer/calcularTotalBruto',
+                    Label : 'calcularTotalBruto',
+                },
+                {
+                    $Type : 'UI.DataFieldForAction',
+                    Action: 'NotaFiscalService.EntityContainer/calcularTotalLiquido',
+                    Label : 'calcularTotalLiquido',
+                },
+                {
+                    $Type : 'UI.DataFieldForAction',
+                    Action: 'NotaFiscalService.EntityContainer/calcularTotalFrete',
+                    Label : 'calcularTotalFrete',
+                },
+            ],
+            ID     : 'CalcularTotal',
+            Label  : 'Calcular Total',
         },
-        Description : {
-            $Type : 'UI.DataField',
-            Value : 'Nota Fiscal',
+    ],
+    UI.HeaderInfo                : {
+        TypeName      : '',
+        TypeNamePlural: '',
+        Title         : {
+            $Type: 'UI.DataField',
+            Value: idAlocacaoSAP,
+        },
+        Description   : {
+            $Type: 'UI.DataField',
+            Value: 'Nota Fiscal',
         },
     },
 );

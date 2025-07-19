@@ -198,6 +198,21 @@
                     }
                   },
                   "actions": {
+                    "DataFieldForAction::NotaFiscalService.rejeitarFrete": {
+                      "afterExecution": {
+                        "enableAutoScroll": true
+                      }
+                    },
+                    "DataFieldForAction::NotaFiscalService.avancarStatusNFs": {
+                      "afterExecution": {
+                        "enableAutoScroll": true
+                      }
+                    },
+                    "DataFieldForAction::NotaFiscalService.voltarStatusNFs": {
+                      "afterExecution": {
+                        "enableAutoScroll": true
+                      }
+                    },
                     "VerLogs": {
                       "press": "monitoramento.monitor.ext.controller.VerLogs.onVerLogs",
                       "visible": true,

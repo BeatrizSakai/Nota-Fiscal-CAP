@@ -135,25 +135,51 @@ module.exports = cds.service.impl(function (srv) {
   });
 
 
-  this.on('voltarStatusNFs', async req => {
-    const { grpFilho, grpStatus } = req.data;
-    if (!grpFilho || grpStatus === undefined)
-      return req.error(400, 'grpFilho e grpStatus são obrigatórios');
-
+  this.on('voltarStatusNFs', NotaFiscalServicoMonitor, async req => {
     const tx = cds.transaction(req);
-    const nfs = await tx.read(NotaFiscalServicoMonitor).where({
-      chaveDocumentoFilho: grpFilho, status: grpStatus
+    console.log("[SERVICE LOG] Ação 'voltarStatusNFs' (Bound) recebida.");
+
+    /* 1️⃣ Pega a chave da PRIMEIRA linha selecionada como referência */
+    const [primeiraChave] = req.params; // Pega só o primeiro objeto do array
+    if (!primeiraChave) {
+      return req.error(400, 'Nenhuma linha foi selecionada para a reversão.');
+    }
+    console.log(`[SERVICE LOG] Chave de referência:`, primeiraChave);
+
+    /* 2️⃣ Busca os dados da linha de referência para descobrir o grupo e o status */
+    const notaReferencia = await tx.read(NotaFiscalServicoMonitor, primeiraChave).columns(
+      'chaveDocumentoFilho',
+      'status'
+    );
+
+    if (!notaReferencia) {
+      return req.warn(404, 'A nota fiscal de referência não foi encontrada no banco de dados.');
+    }
+
+    const { chaveDocumentoFilho: grpFilho, status: grpStatus } = notaReferencia;
+    console.log(`[SERVICE LOG] Operação será para o Grupo: ${grpFilho}, Status: ${grpStatus}`);
+
+    /* 3️⃣ Agora busca o GRUPO COMPLETO que será revertido, garantindo consistência */
+    const notasDoGrupoCompleto = await tx.read(NotaFiscalServicoMonitor).where({
+      chaveDocumentoFilho: grpFilho,
+      status: grpStatus
     });
 
-    if (!nfs.length) return [];
+    if (notasDoGrupoCompleto.length === 0) {
+      return req.warn(404, 'Nenhuma NF encontrada para os critérios informados para processamento.');
+    }
 
+    /* 4️⃣ Roteia para a função de reversão correta, passando o 'req' */
     switch (grpStatus) {
-      case '50': return etapas.voltar.trans50para35_reverso(tx, nfs);
-      case '35': return etapas.voltar.trans35para30_reverso(tx, nfs);
-      case '30': return etapas.voltar.trans30para15_reverso(tx, nfs);
-      case '15': return etapas.voltar.trans15para05_reverso(tx, nfs);
-      case '05': return etapas.voltar.trans05para01_reverso(tx, nfs);
-      default: return req.error(400, `Reversão não permitida para ${grpStatus}`);
+      case '50': return etapas.voltar.trans50para35_reverso(tx, notasDoGrupoCompleto, req);
+      case '35': return etapas.voltar.trans35para30_reverso(tx, notasDoGrupoCompleto, req);
+      case '30': return etapas.voltar.trans30para15_reverso(tx, notasDoGrupoCompleto, req);
+      case '15': return etapas.voltar.trans15para05_reverso(tx, notasDoGrupoCompleto, req);
+      case '05': return etapas.voltar.trans05para01_reverso(tx, notasDoGrupoCompleto, req);
+      default:
+        const msg = `Reversão não é permitida para o status '${grpStatus}'.`;
+        console.warn(`[SERVICE LOG] ${msg}`);
+        return req.error(400, msg);
     }
   });
 
@@ -214,6 +240,13 @@ module.exports = cds.service.impl(function (srv) {
       return falha(ids, 'ERRO', 'Falha ao rejeitar: ' + e.message);
     }
   });
+  // Pega a referência para a sua entidade do serviço.
+
+  // --- FUNÇÃO AUXILIAR PARA O CÁLCULO ---
+  // Uma função para não repetir código. Ela busca os dados, soma e formata.
+
+
+  // Importe a entidade no escopo do serviço
 
   this.after('READ', 'NotaFiscalServicoMonitor', (rows) => {
     rows = Array.isArray(rows) ? rows : [rows];
@@ -235,6 +268,58 @@ module.exports = cds.service.impl(function (srv) {
       row.logIconVisible = true;          // <-- é aqui que você troca!
       // se quisesse esconder só quando for null/undefined:
     }
+  });
+
+  async function calculateAndFormat(req, column, label) {
+    // SELECT busca todos os registros da tabela para o cálculo.
+    const allItems = await SELECT.from(NotaFiscalServicoMonitor);
+
+    // Se a tabela estiver vazia, não há o que calcular.
+    if (allItems.length === 0) {
+      const formattedZero = (0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      // Informa o usuário no frontend que não há dados.
+      req.info(`Nenhum item encontrado para calcular o ${label}.`);
+      return formattedZero;
+    }
+
+    // 'reduce' é ótimo para somar os valores da coluna.
+    const total = allItems.reduce((sum, item) => {
+      // parseFloat garante que estamos somando números, com '|| 0' para segurança.
+      const value = parseFloat(item[column]) || 0;
+      return sum + value;
+    }, 0);
+
+    // Um bom e velho console.log para ajudar a gente no backend! 😉
+    console.log(`LOG DO BACKEND: ${label} calculado para a coluna '${column}': ${total}`);
+
+    const formattedTotal = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    // AQUI ESTÁ A MÁGICA! ✨
+    // Enviando uma mensagem específica para o frontend.
+    req.info(`${label}: ${formattedTotal}`);
+
+    // O 'return' devolve o dado para o frontend.
+    return formattedTotal;
+  }
+
+  // --- IMPLEMENTAÇÃO DE CADA AÇÃO ---
+
+  // Cada handler de ação é 'async (req)' para receber o objeto da requisição.
+  // E cada um chama nossa função genérica com os parâmetros corretos.
+
+  srv.on('calcularTotalBruto', async (req) => {
+    console.log("LOG DO BACKEND: Ação 'calcularTotalBruto' foi chamada.");
+    return calculateAndFormat(req, 'valorBrutoNfse', 'Total Bruto');
+  });
+
+  srv.on('calcularTotalLiquido', async (req) => {
+    console.log("LOG DO BACKEND: Ação 'calcularTotalLiquido' foi chamada.");
+    return calculateAndFormat(req, 'valorLiquidoFreteNfse', 'Total Líquido');
+  });
+
+  srv.on('calcularTotalFrete', async (req) => {
+    console.log("LOG DO BACKEND: Ação 'calcularTotalFrete' foi chamada.");
+    return calculateAndFormat(req, 'valorEfetivoFrete', 'Total Frete');
   });
 
   srv.on('importarCSV', async (req) => {
@@ -327,6 +412,5 @@ module.exports = cds.service.impl(function (srv) {
       return req.error(400, error.message);
     }
   });
-
 
 });
