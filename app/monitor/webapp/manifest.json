@@ -49,7 +49,8 @@
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
-        "sap.fe.templates": {}
+        "sap.fe.templates": {},
+        "sap.f": {}
       }
     },
     "contentDensities": {
@@ -81,12 +82,28 @@
       "css": []
     },
     "routing": {
-      "config": {},
+      "config": {
+        "flexibleColumnLayout": {
+          "defaultTwoColumnLayoutType": "TwoColumnsBeginExpanded",
+          "defaultThreeColumnLayoutType": "ThreeColumnsMidExpanded"
+        },
+        "routerClass": "sap.f.routing.Router"
+      },
       "routes": [
         {
           "pattern": ":?query:",
           "name": "NotaFiscalServicoMonitorList",
-          "target": "NotaFiscalServicoMonitorList"
+          "target": [
+            "NotaFiscalServicoMonitorList"
+          ]
+        },
+        {
+          "name": "NotaFiscalServicoMonitorObjectPage",
+          "pattern": "NotaFiscalServicoMonitor({NotaFiscalServicoMonitorKey}):?query:",
+          "target": [
+            "NotaFiscalServicoMonitorList",
+            "NotaFiscalServicoMonitorObjectPage"
+          ]
         }
       ],
       "targets": {
@@ -98,7 +115,13 @@
             "settings": {
               "contextPath": "/NotaFiscalServicoMonitor",
               "variantManagement": "Page",
-              "navigation": {},
+              "navigation": {
+                "NotaFiscalServicoMonitor": {
+                  "detail": {
+                    "route": "NotaFiscalServicoMonitorObjectPage"
+                  }
+                }
+              },
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
@@ -225,9 +248,38 @@
                 }
               }
             }
-          }
+          },
+          "controlAggregation": "beginColumnPages",
+          "contextPattern": ""
+        },
+        "NotaFiscalServicoMonitorObjectPage": {
+          "type": "Component",
+          "id": "NotaFiscalServicoMonitorObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "navigation": {},
+              "contextPath": "/NotaFiscalServicoMonitor",
+              "variantManagement": "None",
+              "content": {
+                "header": {
+                  "anchorBarVisible": false,
+                  "visible": true
+                }
+              },
+              "editableHeaderContent": false
+            }
+          },
+          "controlAggregation": "midColumnPages",
+          "contextPattern": "/NotaFiscalServicoMonitor({NotaFiscalServicoMonitorKey})"
         }
       }
+    },
+    "rootView": {
+      "viewName": "sap.fe.templates.RootContainer.view.Fcl",
+      "type": "XML",
+      "async": true,
+      "id": "appRootView"
     }
   },
   "sap.fiori": {

@@ -14,22 +14,26 @@ module.exports = cds.service.impl(function (srv) {
 
   console.log("✅ CAP Service inicializado");
 
-  srv.before('CREATE', 'NotaFiscalServicoMonitor', async (req) => {
-    console.log("✅ [BACKEND] Recebido 'before CREATE' para NotaFiscalServicoMonitor.");
+  srv.before('SAVE', NotaFiscalServicoMonitor, async (req) => {
+    console.log("✅ [BACKEND] Recebido 'before SAVE' para NotaFiscalServicoMonitor. Iniciando validações...");
+
+    // Pega apenas os dados que não são nulos para validar, 
+    // pois o Fiori Elements pode enviar muitos campos nulos no rascunho.
+    const dadosParaValidar = req.data;
 
     let todosOsErros = [];
 
     // --- Bloco 1: Validação de Campos ---
-    const validacaoCampos = validation.validarCampos(req.data);
+    const validacaoCampos = validation.validarCampos(dadosParaValidar);
     if (!validacaoCampos.isValid) {
       todosOsErros.push(...validacaoCampos.errors);
     }
 
     // --- Bloco 2: Validação de Consistência no Banco de Dados ---
-    // Só executa se os campos básicos estiverem ok para evitar erros desnecessários.
+    // Só executa se os campos básicos estiverem ok.
     if (validacaoCampos.isValid) {
       const errosDeConsistencia = await validation.validarConsistenciaMaeFilhoNoBanco(
-        req.data,
+        dadosParaValidar,
         this, // Passa o contexto do serviço (this)
         NotaFiscalServicoMonitor // Passa a entidade
       );
@@ -40,12 +44,29 @@ module.exports = cds.service.impl(function (srv) {
 
     // --- Conclusão da Validação ---
     if (todosOsErros.length > 0) {
-      const mensagemDeErro = todosOsErros.join(' | ');
-      console.error("❌ [BACKEND] Validação falhou. Erros:", mensagemDeErro);
+      const mensagemDeErro = todosOsErros.join(' \n ');
+      console.error("❌ [BACKEND] Validação no SAVE falhou. Erros:", mensagemDeErro);
+      // Rejeita a operação 'SAVE'. A mensagem vai para a UI.
       return req.error(400, mensagemDeErro);
     }
 
-    console.log("✅ [BACKEND] Todas as validações passaram. Prosseguindo com a criação.");
+    console.log("✅ [BACKEND] Todas as validações no SAVE passaram. Prosseguindo para o CREATE/UPDATE.");
+  });
+
+
+  // --- SEU BLOCO 'CREATE' ANTIGO, AGORA SIMPLIFICADO ---
+  // Este handler agora só roda se o 'SAVE' passar.
+  // Você pode usá-lo para lógicas finais, como preencher um campo de log,
+  // mas a validação principal já aconteceu.
+  srv.before('CREATE', NotaFiscalServicoMonitor, async (req) => {
+    console.log("✅ [BACKEND] Recebido 'before CREATE'. A validação já foi aprovada no 'SAVE'.");
+    // Lógica de enriquecimento final, se necessário.
+    // Ex: req.data.campoLog = 'CRIADO_COM_SUCESSO';
+  });
+
+  // Apenas para debug, para você ver o fluxo completo
+  srv.after('NEW', NotaFiscalServicoMonitor, (data) => {
+    console.log("➡️ [BACKEND] Recebido 'after NEW'. Um rascunho foi criado na interface.");
   });
 
   this.on('avancarStatusNFs', async req => {
