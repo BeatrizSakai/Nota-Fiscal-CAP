@@ -7,13 +7,13 @@ service NotaFiscalService {
             *,
 
             @Core.Computed
-            virtual criticality         : Integer,
+            virtual criticality    : Integer,
             @Core.Computed
             @UI.IsImageURL
-            virtual logIcon             : String,
+            virtual logIcon        : String,
 
             @Core.Computed
-            virtual logIconVisible      : Boolean,
+            virtual logIconVisible : Boolean,
 
         }
 
@@ -27,7 +27,7 @@ service NotaFiscalService {
             action rejeitarFrete()    returns array of NotaFiscalServicoMonitor;
 
             @cds.odata.bindingparameter.name: '_it'
-            action voltarStatusNFs() returns array of NotaFiscalServicoMonitor;
+            action voltarStatusNFs()  returns array of NotaFiscalServicoMonitor;
         }
 
 
@@ -40,11 +40,11 @@ service NotaFiscalService {
     entity Empresas                 as projection on db.Empresas;
 
     action uploadArquivoFrete(data : LargeBinary)                  returns Boolean;
-    action calcularTotal() returns String;
-    action calcularTotalBruto() returns String;
-    action calcularTotalLiquido() returns String;
-    action calcularTotalFrete() returns String;
-    action limparTotais() returns Boolean;
+    action calcularTotal()                                         returns String;
+    action calcularTotalBruto()                                    returns String;
+    action calcularTotalLiquido()                                  returns String;
+    action calcularTotalFrete()                                    returns String;
+    action limparTotais()                                          returns Boolean;
 
 
     action voltarStatusNFs(grpFilho : String, grpStatus : Integer) returns array of {
