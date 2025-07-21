@@ -221,7 +221,7 @@
                       "text": "Ver Logs",
                       "position": {
                         "placement": "After",
-                        "anchor": "DataFieldForAction::NotaFiscalService.avancarStatusNFs"
+                        "anchor": "DataFieldForAction::NotaFiscalService.voltarStatusNFs"
                       }
                     },
                     "printbtn": {
