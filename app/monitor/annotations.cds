@@ -251,6 +251,13 @@ annotate service.NotaFiscalServicoMonitor with @(
             Label                    : 'Próxima Etapa',
         },
         {
+            $Type                    : 'UI.DataFieldForAction',
+            Action                   : 'NotaFiscalService.voltarStatusNFs',
+            Criticality              : criticality,
+            CriticalityRepresentation: #WithoutIcon,
+            Label                    : 'Voltar Etapa',
+        },
+        {
             $Type: 'UI.DataField',
             Value: tipoMensagemErro,
         },
@@ -275,7 +282,7 @@ annotate service.NotaFiscalServicoMonitor with @(
             ],
             ID     : 'CalcularTotal',
             Label  : 'Calcular Total',
-        },
+        }
     ],
     UI.HeaderInfo                : {
         TypeName      : '',
