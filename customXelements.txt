@@ -40,5 +40,5 @@ O usuário vê claramente o que está selecionado, por que está, e o que vai ac
 -Mais Código, Mais Liberdade:
 Demanda mais trabalho, mas permite criar um fluxo mais intuitivo e robusto para operações em lote, status, logs, etc.
 
-Custom = 240hrs (mais conhecimento da aplicação e do que pode ser feito ou não)
-FE = 120hrs~240hrs
+Custom = 168hrs 
+FE = 80hrs~120hrs
