@@ -1,0 +1,13 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns:m="sap.m">
+
+    <m:Image
+    id="imagemlog"
+    src="{logIcon}"
+    width="40px"
+    densityAware="false"
+    visible="{logIconVisible}"
+    />
+
+</core:FragmentDefinition>

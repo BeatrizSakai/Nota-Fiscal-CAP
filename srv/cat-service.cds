@@ -1,38 +1,73 @@
 using my.db as db from '../db/schema';
 
 service NotaFiscalService {
-    entity NotaFiscalServicoMonitor as projection on db.NotaFiscalServicoMonitor;
+            @odata.draft.enabled
+    entity NotaFiscalServicoMonitor as
+        projection on db.NotaFiscalServicoMonitor {
+            *,
+
+            @Core.Computed
+            virtual criticality    : Integer,
+            @Core.Computed
+            @UI.IsImageURL
+            virtual logIcon        : String,
+
+            @Core.Computed
+            virtual logIconVisible : Boolean,
+
+        }
+
+
+        actions {
+            @cds.odata.bindingparameter.name: '_it'
+            action avancarStatusNFs() returns array of NotaFiscalServicoMonitor;
+
+            @cds.odata.bindingparameter.name: '_it'
+
+            action rejeitarFrete()    returns array of NotaFiscalServicoMonitor;
+
+            @cds.odata.bindingparameter.name: '_it'
+            action voltarStatusNFs()  returns array of NotaFiscalServicoMonitor;
+        }
+
 
     entity NotaFiscalServicoLog     as projection on db.NotaFiscalServicoLog;
 
-    entity ConfiguracoesISS as projection on db.ZTMM_ISS_CFG;
+    @odata.draft.enabled
+    entity ConfiguracoesISS         as projection on db.ZTMM_ISS_CFG;
+
     @readonly
-    entity Empresas as projection on db.Empresas;
+    entity Empresas                 as projection on db.Empresas;
 
-    action uploadArquivoFrete(data: LargeBinary) returns Boolean;
+    action uploadArquivoFrete(data : LargeBinary)                  returns Boolean;
+    action calcularTotal()                                         returns String;
+    action calcularTotalBruto()                                    returns String;
+    action calcularTotalLiquido()                                  returns String;
+    action calcularTotalFrete()                                    returns String;
+    action limparTotais()                                          returns Boolean;
 
-     action voltarStatusNFs(grpFilho: String, grpStatus: Integer) returns array of {
+
+    action voltarStatusNFs(grpFilho : String, grpStatus : Integer) returns array of {
         idAlocacaoSAP : String;
         success       : Boolean;
         message       : String;
         novoStatus    : String;
     };
-    action avancarStatusNFs(
-        grpFilho      : String     
-    ) returns array of {
-        idAlocacaoSAP     : String;
-        success           : Boolean;
-        message           : String;
-        novoStatus        : String;
-        numeroNfseServico : String;
-    };
-    action rejeitarFrete(
-        grpFilho      : String
-    ) returns array of {
+
+    type CSVImportResult {
         idAlocacaoSAP : String;
-        success       : Boolean;
-        message       : String;
-        novoStatus    : String;
-    };
+        sucesso       : Boolean;
+        mensagem      : String;
+    }
+
+    action importarCSV(fileContent : LargeString)                  returns array of CSVImportResult;
 
 }
+
+annotate NotaFiscalService.ConfiguracoesISS with {
+    @mandatory mandt;
+    @mandatory loc_neg;
+    @mandatory loc_fornec;
+};
+
+annotate NotaFiscalService.NotaFiscalServicoMonitor with @(Capabilities: {DeleteRestrictions: {Deletable: false}});
